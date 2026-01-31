@@ -102,7 +102,7 @@ server {
     listen 80;
     server_name localhost;
     
-    root /home/anelson/EmberCortex/public;
+    root $HOME/EmberCortex/public;
     index index.php index.html;
     
     # Logging
@@ -178,22 +178,22 @@ sudo systemctl reload nginx
 
 ```bash
 # Ensure NGINX can read the project
-sudo usermod -aG anelson www-data
+sudo usermod -aG $USER www-data
 
 # Set directory permissions
-chmod 755 /home/anelson
-chmod -R 755 /home/anelson/EmberCortex
+chmod 755 $HOME
+chmod -R 755 $HOME/EmberCortex
 
 # Create data directory for SQLite (writable by PHP)
-mkdir -p /home/anelson/EmberCortex/data
-chmod 775 /home/anelson/EmberCortex/data
-sudo chown anelson:www-data /home/anelson/EmberCortex/data
+mkdir -p $HOME/EmberCortex/data
+chmod 775 $HOME/EmberCortex/data
+sudo chown $USER:www-data $HOME/EmberCortex/data
 ```
 
 ### 6. Create Project Structure
 
 ```bash
-cd /home/anelson/EmberCortex
+cd $HOME/EmberCortex
 
 # Create directories
 mkdir -p public config lib data
@@ -285,8 +285,8 @@ sudo tail -f /var/log/php8.3-fpm.log  # Adjust version
 
 ### Permission denied on SQLite
 ```bash
-sudo chown -R anelson:www-data /home/anelson/EmberCortex/data
-chmod 775 /home/anelson/EmberCortex/data
+sudo chown -R $USER:www-data $HOME/EmberCortex/data
+chmod 775 $HOME/EmberCortex/data
 ```
 
 ### Check service status
@@ -309,7 +309,7 @@ Edit `systemd/llama-server.conf` to configure your model and settings:
 # Key settings in llama-server.conf:
 
 # Path to your model (GGUF format)
-MODEL_PATH=/home/anelson/llm_models/Llama-3.3-70B-Instruct-Q4_K_M.gguf
+MODEL_PATH=$HOME/llm_models/Llama-3.3-70B-Instruct-Q4_K_M.gguf
 
 # Server port (must match config/config.php)
 PORT=8080
@@ -324,7 +324,7 @@ GPU_LAYERS=99
 ### Install the Service
 
 ```bash
-cd /home/anelson/EmberCortex/systemd
+cd $HOME/EmberCortex/systemd
 
 # Run the installer
 sudo ./install-services.sh
@@ -356,12 +356,12 @@ sudo systemctl enable llama-server
 
 1. Edit the config file:
    ```bash
-   vim /home/anelson/EmberCortex/systemd/llama-server.conf
+   vim $HOME/EmberCortex/systemd/llama-server.conf
    ```
 
 2. Change `MODEL_PATH` to your new model:
    ```bash
-   MODEL_PATH=/home/anelson/llm_models/your-new-model.gguf
+   MODEL_PATH=$HOME/llm_models/your-new-model.gguf
    ```
 
 3. Restart the service:
@@ -373,7 +373,7 @@ sudo systemctl enable llama-server
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `LLAMA_CPP_DIR` | Path to llama.cpp build | `/home/anelson/ggml-org/llama.cpp/build-cuda` |
+| `LLAMA_CPP_DIR` | Path to llama.cpp build | `$HOME/ggml-org/llama.cpp/build-cuda` |
 | `MODEL_PATH` | Path to GGUF model file | (required) |
 | `HOST` | Listen address | `0.0.0.0` |
 | `PORT` | Listen port | `8080` |
@@ -473,7 +473,7 @@ curl -X POST "http://localhost:8082/collections/my_collection?description=My%20d
 # Ingest a directory
 curl -X POST http://localhost:8082/ingest/directory \
   -H "Content-Type: application/json" \
-  -d '{"collection": "my_collection", "directory": "/home/anelson/my-project"}'
+  -d '{"collection": "my_collection", "directory": "$HOME/my-project"}'
 
 # Query a collection
 curl -X POST http://localhost:8082/query \
@@ -623,7 +623,7 @@ Edit `systemd/embed-server.conf`:
 
 ```bash
 # Key settings:
-MODEL_PATH=/home/anelson/llm_models/nomic-embed-text-v1.5.Q8_0.gguf
+MODEL_PATH=$HOME/llm_models/nomic-embed-text-v1.5.Q8_0.gguf
 PORT=8081
 GPU_LAYERS=99
 BATCH_SIZE=8192  # Must be >= max tokens per chunk
@@ -672,7 +672,7 @@ sudo systemctl status llama-server embed-server rag-server
 # 5. Or ingest via CLI
 curl -X POST http://localhost:8082/ingest/directory \
   -H "Content-Type: application/json" \
-  -d '{"collection": "my_code", "directory": "/home/anelson/my-project"}'
+  -d '{"collection": "my_code", "directory": "$HOME/my-project"}'
 
 # 6. Chat with RAG
 # Select your collection from the dropdown in the chat UI
@@ -742,6 +742,27 @@ sudo systemctl restart rag-server
 
 ```bash
 sudo systemctl enable llama-server embed-server rag-server
+```
+
+---
+
+## Uninstall
+
+To remove EmberCortex systemd services:
+
+```bash
+cd ~/EmberCortex/systemd
+sudo ./uninstall-services.sh
+```
+
+This will:
+- Stop and disable all EmberCortex services
+- Remove systemd unit files
+- Optionally remove NGINX configuration
+
+To fully remove all data:
+```bash
+rm -rf ~/EmberCortex ~/embercortex-env
 ```
 
 ---
