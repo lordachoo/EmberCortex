@@ -1,0 +1,37 @@
+[Unit]
+Description=llama.cpp LLM Server for EmberCortex
+Documentation=https://github.com/ggml-org/llama.cpp
+After=network.target
+
+[Service]
+Type=simple
+User=anelson
+Group=anelson
+WorkingDirectory=/home/anelson/ggml-org/llama.cpp/build-cuda
+
+# Load configuration from file
+EnvironmentFile=/home/anelson/EmberCortex/systemd/llama-server.conf
+
+# Build the command with conditional flags
+ExecStart=/bin/bash -c '\
+    ARGS="-m ${MODEL_PATH} -c ${CONTEXT_LENGTH} --host ${HOST} --port ${PORT} -ngl ${GPU_LAYERS} -t ${THREADS} -b ${BATCH_SIZE}"; \
+    [ "${NO_MMAP}" = "true" ] && ARGS="$ARGS --no-mmap"; \
+    [ "${FLASH_ATTN}" = "true" ] && ARGS="$ARGS --flash-attn"; \
+    [ -n "${EXTRA_FLAGS}" ] && ARGS="$ARGS ${EXTRA_FLAGS}"; \
+    exec ${LLAMA_CPP_DIR}/bin/llama-server $ARGS'
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=65536
+LimitMEMLOCK=infinity
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=llama-server
+
+[Install]
+WantedBy=multi-user.target

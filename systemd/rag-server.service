@@ -1,0 +1,41 @@
+[Unit]
+Description=EmberCortex RAG Server (ChromaDB + LlamaIndex)
+Documentation=https://github.com/your-repo/embercortex
+After=network.target llama-server.service
+
+[Service]
+Type=simple
+User=anelson
+Group=anelson
+WorkingDirectory=/home/anelson/EmberCortex/rag
+
+# Load configuration
+EnvironmentFile=/home/anelson/EmberCortex/systemd/rag-server.conf
+
+# Activate venv and run server
+ExecStart=/bin/bash -c '\
+    source ${VENV_PATH}/bin/activate && \
+    export LLM_API_BASE="${LLM_API_BASE}" && \
+    export LLM_MODEL="${LLM_MODEL}" && \
+    export EMBED_MODEL="${EMBED_MODEL}" && \
+    export CHUNK_SIZE="${CHUNK_SIZE}" && \
+    export CHUNK_OVERLAP="${CHUNK_OVERLAP}" && \
+    export TOP_K="${TOP_K}" && \
+    export RAG_HOST="${RAG_HOST}" && \
+    export RAG_PORT="${RAG_PORT}" && \
+    exec python rag_server.py'
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rag-server
+
+[Install]
+WantedBy=multi-user.target

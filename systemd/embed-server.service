@@ -1,0 +1,41 @@
+[Unit]
+Description=EmberCortex Embedding Server (llama.cpp)
+Documentation=https://github.com/ggml-org/llama.cpp
+After=network.target
+
+[Service]
+Type=simple
+User=anelson
+Group=anelson
+
+# Load configuration
+EnvironmentFile=/home/anelson/EmberCortex/systemd/embed-server.conf
+
+# Start the embedding server
+ExecStart=/bin/bash -c '\
+    ${LLAMA_CPP_DIR}/bin/llama-server \
+    --model "${MODEL_PATH}" \
+    --host "${HOST}" \
+    --port "${PORT}" \
+    --embedding \
+    --ctx-size "${CONTEXT_LENGTH}" \
+    --n-gpu-layers "${GPU_LAYERS}" \
+    --batch-size "${BATCH_SIZE}" \
+    --ubatch-size "${BATCH_SIZE}" \
+    --parallel 8 \
+    --cont-batching'
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=embed-server
+
+[Install]
+WantedBy=multi-user.target

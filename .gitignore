@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.env
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Python virtual environment
+embercortex-env/
+
+# ChromaDB data (local vector store)
+rag/data/
+chroma_db/
+
+# SQLite database (user data)
+data/*.db
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Secrets / API keys
+.env
+.env.local
+.env.*.local
+secrets.php
+config.local.php
+
+# Cache
+*.cache
+.cache/
+.huggingface/
+
+# Node (if any frontend build tools added later)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Model files (too large for git)
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+models/
+
+# Logs
+logs/
+*.log
+
+# Coverage / testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
