@@ -12,9 +12,142 @@ EmberCortex provides a simple, extensible web interface for:
 - Automatic duplicate detection during re-ingestion
 - Query history and settings (SQLite)
 
-## LLAMA.CPP -> DGX SPARK
+---
 
-`bash <(curl -s https://ggml.ai/dgx-spark.sh)`
+## 🚀 DGX Spark Quick Start
+
+Get EmberCortex running on your DGX Spark in ~10 minutes.
+
+### Step 1: Install llama.cpp (CUDA-optimized)
+
+```bash
+# Install required dependency
+sudo apt install -y libcurl4-openssl-dev
+
+# Build llama.cpp with CUDA support (takes ~5 min)
+cd ~
+rm -rf ~/ggml-org 2>/dev/null
+mkdir -p ~/ggml-org
+git clone https://github.com/ggml-org/llama.cpp ~/ggml-org/llama.cpp
+cd ~/ggml-org/llama.cpp
+cmake -B build-cuda -DGGML_CUDA=ON
+cmake --build build-cuda -j
+```
+
+### Step 2: Download Models
+
+```bash
+mkdir -p ~/llm_models
+cd ~/llm_models
+
+# GPT-OSS-120B (main LLM - ~70GB, Q4 quantized)
+wget https://huggingface.co/ggml-org/gpt-oss-120b-GGUF/resolve/main/gpt-oss-120b-Q4_K_M.gguf
+
+# Nomic Embed (for RAG embeddings - ~300MB)
+wget https://huggingface.co/nomic-ai/nomic-embed-text-v1.5-GGUF/resolve/main/nomic-embed-text-v1.5.Q8_0.gguf
+```
+
+**Alternative models:**
+| Model | Size | Use Case | Download |
+|-------|------|----------|----------|
+| Llama-3.3-70B-Instruct | ~42GB Q4 | General chat | [HuggingFace](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF) |
+| Qwen2.5-Coder-32B | ~20GB Q4 | Code generation | [HuggingFace](https://huggingface.co/Qwen/Qwen2.5-Coder-32B-Instruct-GGUF) |
+| DeepSeek-R1-Distill-Llama-70B | ~42GB Q4 | Reasoning | [HuggingFace](https://huggingface.co/bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF) |
+
+### Step 3: Install EmberCortex
+
+```bash
+# Clone the repo
+cd ~
+git clone https://github.com/lordachoo/EmberCortex.git
+cd EmberCortex
+
+# Install NGINX and PHP
+sudo apt update
+sudo apt install -y nginx php-fpm php-sqlite3 php-curl php-json php-mbstring
+
+# Set up Python environment for RAG
+python3 -m venv ~/embercortex-env
+source ~/embercortex-env/bin/activate
+pip install -r ~/EmberCortex/rag/requirements.txt
+```
+
+### Step 4: Configure Services
+
+```bash
+cd ~/EmberCortex/systemd
+
+# Edit configs to point to your models
+# llama-server.conf - set MODEL_PATH to your LLM
+# embed-server.conf - set MODEL_PATH to nomic-embed model
+
+# Install systemd services
+sudo ./install-services.sh
+```
+
+### Step 5: Configure NGINX
+
+```bash
+# Check PHP-FPM version
+ls /var/run/php/  # Note the socket name (e.g., php8.3-fpm.sock)
+
+# Create NGINX config
+sudo tee /etc/nginx/sites-available/embercortex << 'EOF'
+server {
+    listen 80;
+    server_name localhost;
+    root /home/YOUR_USERNAME/EmberCortex/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;  # Adjust version
+    }
+
+    location /api/llm/ { proxy_pass http://127.0.0.1:8080/; proxy_read_timeout 300s; }
+    location /api/embed/ { proxy_pass http://127.0.0.1:8081/; }
+    location /api/rag/ { proxy_pass http://127.0.0.1:8082/; proxy_read_timeout 300s; }
+}
+EOF
+
+# Replace YOUR_USERNAME with your actual username
+sudo sed -i "s/YOUR_USERNAME/$USER/g" /etc/nginx/sites-available/embercortex
+
+# Enable site
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sf /etc/nginx/sites-available/embercortex /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+
+# Set permissions
+chmod 755 $HOME
+chmod -R 755 $HOME/EmberCortex
+mkdir -p $HOME/EmberCortex/data
+sudo chown -R $USER:www-data $HOME/EmberCortex/data
+chmod 775 $HOME/EmberCortex/data
+```
+
+### Step 6: Start Services
+
+```bash
+sudo systemctl start llama-server
+sudo systemctl start embed-server
+sudo systemctl start rag-server
+
+# Check status
+sudo systemctl status llama-server embed-server rag-server
+```
+
+### Step 7: Open EmberCortex
+
+Open your browser to **http://localhost/** (or your DGX Spark's IP)
+
+🎉 **Done!** You now have a local LLM + RAG system running on your DGX Spark.
+
+---
 
 ## Architecture
 
