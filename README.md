@@ -848,6 +848,60 @@ Edit `~/.continue/config.json` and add:
 | **Aider** | `aider --openai-api-base http://localhost:8080/v1 --model gpt-oss-120b` |
 | **Any OpenAI Client** | Set `api_base` to `http://localhost:8080/v1` |
 
+---
+
+## IDE Integration (Cline)
+
+[Cline](https://github.com/cline/cline) is an autonomous coding agent for VS Code that can use your local LLM.
+
+### Install Cline
+
+1. Open VS Code
+2. Go to Extensions (`Ctrl+Shift+X`)
+3. Search for "Cline" and install it
+
+### Configure Cline
+
+1. Open Cline settings (click the gear icon in Cline panel)
+2. Select **"OpenAI Compatible"** as the API Provider
+3. Configure:
+
+| Setting | Value |
+|---------|-------|
+| **Base URL** | `http://localhost:8080/v1` (or your DGX Spark IP like `http://192.168.1.100:8080/v1`) |
+| **API Key** | `not-needed` (any value works) |
+| **Model ID** | `gpt-oss-120b` (or your model name) |
+
+### Remote Access
+
+If accessing from another machine, use your DGX Spark's IP address:
+
+```
+Base URL: http://YOUR_DGX_IP:8080/v1
+```
+
+Make sure port 8080 is accessible (firewall/network settings).
+
+### Cline Features
+
+| Feature | Description |
+|---------|-------------|
+| **Autonomous coding** | Cline can read/write files, run commands |
+| **Task execution** | Give it a task, it figures out the steps |
+| **File editing** | Creates and modifies code directly |
+| **Terminal access** | Runs build commands, tests, etc. |
+
+**Example prompts:**
+```
+Create a Python script that reads a CSV and generates a summary report
+
+Fix the bug in src/auth.py where users can't log in
+
+Add unit tests for the database module
+```
+
+---
+
 ### Recommended Models for Code
 
 For best code editing results, consider using coder-tuned models:
