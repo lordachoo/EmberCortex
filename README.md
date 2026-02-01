@@ -684,16 +684,66 @@ Create or edit `~/.continue/config.json`:
       "title": "EmberCortex Local",
       "provider": "openai",
       "model": "gpt-oss-120b",
-      "apiBase": "http://localhost:8080/v1",
-      "apiKey": "not-needed"
+      "apiBase": "http://${SPARK_IP_ADDR}:8080/v1",
+      "apiKey": "not-needed",
+      "contextLength": 64000
     }
   ],
   "tabAutocompleteModel": {
     "title": "Local Autocomplete",
     "provider": "openai",
     "model": "gpt-oss-120b",
-    "apiBase": "http://localhost:8080/v1",
+    "apiBase": "http://${SPARK_IP_ADDR}:8080/v1",
     "apiKey": "not-needed"
+  },
+  "agent": {
+    "defaultShell": "/bin/bash",
+    "maxFileSize": 524288,
+    "autoApprove": [
+      "readFile",
+      "writeFile",
+      "createFile",
+      "deleteFile",
+      "renameFile",
+      "moveFile",
+      "copyFile",
+      "listDirectory",
+      "viewSubdirectory",
+      "search",
+      "grep",
+      "sed",
+      "createDirectory",
+      "runTerminalCommand",
+      "runCommand",
+      "exec",
+      "applyDiff",
+      "editFile",
+      "insertCode",
+      "replaceCode",
+      "viewDiff",
+      "git",
+      "head",
+      "commit",
+      "push",
+      "pull",
+      "checkout",
+      "npm",
+      "yarn",
+      "pip",
+      "cargo",
+      "make",
+      "build",
+      "test",
+      "lint",
+      "format",
+      "browserAction",
+      "fetchUrl",
+      "curlRequest"
+    ]
+  },
+  "experimental": {
+    "readFileMaxBytes": 524288,
+    "readFileMaxLines": 10000
   },
   "contextProviders": [
     { "name": "code" },
@@ -716,6 +766,79 @@ Create or edit `~/.continue/config.json`:
 | **Explain** | Highlight code, type `/explain` in chat |
 | **Add Docs** | Highlight code, type `/comment` |
 | **Fix Error** | Click on error, type `/fix` |
+
+### Context Providers (@-mentions)
+
+Continue requires explicit context via `@` mentions. The model **cannot** automatically read files - you must provide them:
+
+| Context | Usage | Example |
+|---------|-------|---------|
+| **@file** | Include a specific file | `@file /path/to/file.c Summarize this` |
+| **@folder** | Include all files in a folder | `@folder src/ Explain the architecture` |
+| **@codebase** | Search entire codebase | `@codebase Where is authentication handled?` |
+| **@terminal** | Include recent terminal output | `@terminal Why did this command fail?` |
+| **@diff** | Include current git diff | `@diff Review my changes` |
+| **@problems** | Include IDE errors/warnings | `@problems Fix these issues` |
+| **@docs** | Search indexed documentation | `@docs How do I use React hooks?` |
+| **@url** | Fetch and include a URL | `@url https://example.com/api-docs` |
+| **@open** | Include all open files | `@open Summarize what I'm working on` |
+
+**Example prompts:**
+```
+@file /home/user/project/src/main.c Explain the encrypt functions
+
+@folder src/utils/ What does this module do?
+
+@codebase Find all database connection code
+
+@terminal The build failed, why?
+```
+
+### Enable Tool Use (File Reading, Commands)
+
+To let Continue read files and run commands automatically (like `ls`, `cat`, etc.), enable tools in your config:
+
+Edit `~/.continue/config.json` and add:
+
+```json
+{
+  "models": [
+    {
+      "title": "EmberCortex Local",
+      "provider": "openai",
+      "model": "gpt-oss-120b",
+      "apiBase": "http://localhost:8080/v1",
+      "apiKey": "not-needed",
+      "useLegacyCompletionsEndpoint": false
+    }
+  ],
+  "experimental": {
+    "useTools": true
+  },
+  "tools": [
+    { "type": "built-in", "name": "readFile" },
+    { "type": "built-in", "name": "readCurrentFile" },
+    { "type": "built-in", "name": "runTerminalCommand" },
+    { "type": "built-in", "name": "searchWeb" },
+    { "type": "built-in", "name": "viewSubdirectory" },
+    { "type": "built-in", "name": "exactSearch" },
+    { "type": "built-in", "name": "searchReplace" }
+  ],
+  "allowAnonymousTelemetry": false
+}
+```
+
+**Note:** Tool use requires the model to support function calling. GPT-OSS-120B and Qwen models generally support this. If tools don't work, fall back to explicit `@file` mentions.
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| Model won't read files | Use `@file /path/to/file` explicitly |
+| "I don't have access to files" | Add `tools` config above, or use `@file` |
+| Autocomplete not working | Check `tabAutocompleteModel` is configured |
+| Slow responses | Reduce context size, use smaller model |
+| Connection refused | Ensure `llama-server` is running on port 8080 |
 
 ### Other IDE Options
 
